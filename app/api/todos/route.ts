@@ -4,8 +4,10 @@ import { prisma } from "@/lib/prisma";
 export async function GET() {
   try {
     const todos = await prisma.todo.findMany({
-      orderBy: {
-        createdAt: "desc",
+      orderBy: { createdAt: "desc" },
+      include: {
+        dependencies: true,
+        dependents: true,
       },
     });
     return NextResponse.json(todos);

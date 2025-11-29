@@ -79,3 +79,33 @@ export async function POST(request: Request) {
     );
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const { id, dependencyId } = await request.json();
+
+    if (!id || !dependencyId)
+      return NextResponse.json(
+        { error: "id and dependencyId required" },
+        { status: 400 }
+      );
+
+    const updated = await prisma.todo.update({
+      where: { id },
+      data: {
+        dependencies: {
+          disconnect: { id: dependencyId },
+        },
+      },
+      include: { dependencies: true },
+    });
+
+    return NextResponse.json(updated);
+  } catch (error) {
+    console.error("Failed to remove dependency:", error);
+    return NextResponse.json(
+      { error: "Error removing dependency" },
+      { status: 500 }
+    );
+  }
+}

@@ -88,6 +88,15 @@ export default function Home() {
     fetchTodos();
   };
 
+  const handleRemoveDependency = async (id: number, dependencyId: number) => {
+    await fetch(`/api/todos/dependency`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, dependencyId }),
+    });
+    fetchTodos();
+  };
+
   // DATE FUNCTION
   const isOverdue = (date: string) => {
     if (!date) return false;
@@ -127,13 +136,49 @@ export default function Home() {
     return visited;
   };
 
+  const getEarliestDueDate = (todo: any, allTodos: any[]) => {
+    const visited = new Set<number>();
+    const stack = [todo.id];
+    const dates: Date[] = [];
+
+    while (stack.length) {
+      const currentId = stack.pop()!;
+      if (visited.has(currentId)) continue;
+      visited.add(currentId);
+
+      const t = allTodos.find((x) => x.id === currentId);
+      if (!t) continue;
+
+      if (t.dueDate) dates.push(new Date(t.dueDate));
+
+      if (t.dependencies) {
+        t.dependencies.forEach((d: any) => stack.push(d.id));
+      }
+    }
+
+    if (dates.length === 0) return null;
+
+    return new Date(Math.min(...dates));
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-orange-500 to-red-500 flex flex-col items-center p-4">
       <div className="w-full max-w-md">
-        <h1 className="text-4xl font-bold text-center text-white mb-8">
+        <h1 className="text-4xl font-bold text-center text-white mb-4">
           Things To Do App
         </h1>
 
+        {/* GO TO DEPEDENCY GRAPH PAGE */}
+        <div className="flex justify-center mb-4">
+          <a
+            href="/graph"
+            className="bg-white text-indigo-600 px-4 py-2 rounded-full shadow hover:bg-gray-100 transition mb-6"
+          >
+            View Dependency Graphs
+          </a>
+        </div>
+
+        {/* ADD NEW TODO */}
         <div className="flex mb-6">
           <input
             type="text"
@@ -155,6 +200,7 @@ export default function Home() {
           </button>
         </div>
 
+        {/* LIST OF TODOS */}
         <ul>
           {todos.map((todo: any) => (
             <li
@@ -213,7 +259,21 @@ export default function Home() {
               </div>
 
               <div className="w-full">
-                <label className="text-sm text-gray-600">Dependencies:</label>
+                {(() => {
+                  const earliest = getEarliestDueDate(todo, todos);
+                  return (
+                    <label className="text-sm text-gray-600">
+                      Dependencies
+                      {earliest
+                        ? ` (earliest due date: ${format(
+                            earliest,
+                            "MM/dd/yyyy"
+                          )})`
+                        : ""}
+                      :
+                    </label>
+                  );
+                })()}
 
                 <Select
                   options={todos
@@ -235,9 +295,21 @@ export default function Home() {
                     label: d.title,
                   }))}
                   onChange={(selected: any) => {
-                    selected.forEach((s: any) => {
-                      handleAddDependency(todo.id, s.value);
-                    });
+                    const newIds = selected.map((s: any) => s.value);
+                    const oldIds =
+                      todo.dependencies?.map((d: any) => d.id) || [];
+
+                    newIds
+                      .filter((id: number) => !oldIds.includes(id))
+                      .forEach((id: number) =>
+                        handleAddDependency(todo.id, id)
+                      );
+
+                    oldIds
+                      .filter((id: number) => !newIds.includes(id))
+                      .forEach((id: number) =>
+                        handleRemoveDependency(todo.id, id)
+                      );
                   }}
                 />
               </div>
