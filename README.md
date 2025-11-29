@@ -53,3 +53,8 @@ Implement a task dependency system that allows tasks to depend on other tasks. T
 3. Submit a link to your repository in the application form.
 
 Thanks for your time and effort. We'll be in touch soon!
+
+## Solution:
+
+Description: The now updated app includes due dates and generated images (from pexels) for each todo task. Additionally, tasks can depend on each other (no circular dependencies though) and users are able to go to the "View Depedency Graphs" page to view the dependency graphs of all of their todos, with the critical path highlighted in yellow.
+Demo Video: https://youtu.be/qgP_YHygrrA
